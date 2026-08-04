@@ -1,0 +1,11 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "tabWidth": 2, // 每级缩进的空格数（默认值：2）
+  "semi": false, // 添加分号（默认：true）
+  "singleQuote": true, // 使用单引号（默认：false）
+  "trailingComma": "all", // 多行结构中的尾随逗号（默认："all"）
+  "bracketSameLine": true, // 将多行 HTML（HTML、JSX、Vue、Angular）元素的 > 放在最后一行的末尾，而不是单独放在下一行（不适用于自闭合元素）。
+  "singleAttributePerLine": true, // 在 HTML、Vue 和 JSX 中强制每行仅包含一个属性。
+  "sortImports": true, // 使用排序
+  "vueIndentScriptAndStyle": true // vue缩进
+}

@@ -1,0 +1,18 @@
+@import './base.css';
+
+#app {
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+button,
+input {
+  font: inherit;
+}

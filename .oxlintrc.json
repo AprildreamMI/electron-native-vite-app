@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  // 内置插件使用rust实现 不用安装对应包
+  "plugins": ["eslint", "unicorn", "oxc", "vue"],
+  "env": {
+    "browser": true
+  },
+  // 启用的规则等级
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "style": "warn",
+    "pedantic": "off"
+  },
+  "ignorePatterns": ["dist/**", "coverage/**", "vendor/**", "test/snapshots/**", "node_modules/**"],
+  "rules": {
+    "unicorn/filename-case": "off",
+    "eslint/sort-imports": "off" // 禁用当前,使用oxfmt排序
+  }
+}
