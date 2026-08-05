@@ -64,6 +64,36 @@ test('dotenv 不覆盖已有系统环境变量', () => {
   }
 })
 
+test('按 NODE_ENV 内置互斥的 PROD 和 DEV 标记', () => {
+  const { loadElectronEnv } = require('../../electron/env.cjs')
+  const projectRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'electron-env-'))
+  const originalNodeEnv = process.env.NODE_ENV
+  const originalProd = process.env.PROD
+  const originalDev = process.env.DEV
+
+  try {
+    process.env.NODE_ENV = 'production'
+    loadElectronEnv({ mode: 'development', projectRoot })
+
+    assert.equal(process.env.PROD, 'true')
+    assert.equal(process.env.DEV, 'false')
+
+    process.env.NODE_ENV = 'development'
+    loadElectronEnv({ mode: 'production', projectRoot })
+
+    assert.equal(process.env.PROD, 'false')
+    assert.equal(process.env.DEV, 'true')
+  } finally {
+    if (originalNodeEnv === undefined) {delete process.env.NODE_ENV}
+    else {process.env.NODE_ENV = originalNodeEnv}
+    if (originalProd === undefined) {delete process.env.PROD}
+    else {process.env.PROD = originalProd}
+    if (originalDev === undefined) {delete process.env.DEV}
+    else {process.env.DEV = originalDev}
+    fs.rmSync(projectRoot, { force: true, recursive: true })
+  }
+})
+
 test('解析 VITE_ 布尔配置', () => {
   const { isEnabled } = require('../../electron/env.cjs')
 

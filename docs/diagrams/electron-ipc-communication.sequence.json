@@ -1,0 +1,407 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "Electron IPC 通信全链路",
+    "subtitle": "从启动注册到 send、invoke、on、once、off 与 Main 主动推送",
+    "output": "docs/diagrams/electron-ipc-communication.html",
+    "viewBox": [820, 1680],
+    "animation": "none",
+    "visual_preset": "classic",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "startup-registration",
+        "label": "启动时注册",
+        "focus": ["main", "registry", "module", "ipc"],
+        "note": "Main ready 后通过聚合入口，把功能模块的 on 与 handle 注册到 ipcMain。"
+      },
+      {
+        "id": "renderer-request",
+        "label": "Renderer 发起请求",
+        "focus": ["view", "api", "bridge", "ipc", "module"],
+        "note": "页面只调用业务 API，再由 Preload 白名单桥接到 Electron IPC。"
+      },
+      {
+        "id": "main-push",
+        "label": "Main 主动推送",
+        "focus": ["module", "ipc", "bridge", "api", "view"],
+        "note": "event.sender.send 触发 Renderer listener，业务包装层只向页面转交 payload。"
+      },
+      {
+        "id": "listener-cleanup",
+        "label": "监听与清理",
+        "focus": ["view", "api", "bridge", "ipc"],
+        "note": "on 与 once 在 ipcRenderer 注册；off 用订阅 ID 找回原 listener 并移除。"
+      }
+    ]
+  },
+  "participants": [
+    {
+      "id": "main",
+      "type": "backend",
+      "label": "Main 启动",
+      "sublabel": "electron/main.cjs"
+    },
+    {
+      "id": "registry",
+      "type": "backend",
+      "label": "IPC 注册",
+      "sublabel": "ipc/index.cjs"
+    },
+    {
+      "id": "module",
+      "type": "backend",
+      "label": "功能模块",
+      "sublabel": "user.cjs + demo.cjs"
+    },
+    {
+      "id": "ipc",
+      "type": "messagebus",
+      "label": "Electron IPC",
+      "sublabel": "主进程与渲染进程"
+    },
+    {
+      "id": "bridge",
+      "type": "security",
+      "label": "Preload 桥",
+      "sublabel": "preload.cjs"
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "业务 API",
+      "sublabel": "src/apis/*.js"
+    },
+    {
+      "id": "view",
+      "type": "frontend",
+      "label": "Vue 页面",
+      "sublabel": "IpcDemoView.vue"
+    }
+  ],
+  "segments": [
+    {
+      "from": 150,
+      "to": 330,
+      "label": "01 / 启动注册"
+    },
+    {
+      "from": 348,
+      "to": 520,
+      "label": "02 / send：只发送，不等待"
+    },
+    {
+      "from": 538,
+      "to": 855,
+      "label": "03 / invoke：请求并等待返回"
+    },
+    {
+      "from": 873,
+      "to": 1020,
+      "label": "04 / Renderer 注册监听"
+    },
+    {
+      "from": 1038,
+      "to": 1435,
+      "label": "05 / Main 主动推送"
+    },
+    {
+      "from": 1453,
+      "to": 1585,
+      "label": "06 / off 与组件卸载清理"
+    }
+  ],
+  "messages": [
+    {
+      "id": "ready-register",
+      "from": "main",
+      "to": "registry",
+      "y": 180,
+      "label": "registerIpcHandlers(ipcMain)",
+      "variant": "emphasis",
+      "note": "electron/main.cjs:36，在 app.whenReady() 后调用。"
+    },
+    {
+      "id": "register-user-module",
+      "from": "registry",
+      "to": "module",
+      "y": 225,
+      "label": "createUserIpcModule().register",
+      "variant": "default",
+      "note": "electron/ipc/index.cjs:5。"
+    },
+    {
+      "id": "register-demo-module",
+      "from": "registry",
+      "to": "module",
+      "y": 270,
+      "label": "createDemoIpcModule().register",
+      "variant": "default",
+      "note": "electron/ipc/index.cjs:6。"
+    },
+    {
+      "id": "register-electron-handlers",
+      "from": "module",
+      "to": "ipc",
+      "y": 315,
+      "label": "ipcMain.on / ipcMain.handle",
+      "variant": "emphasis",
+      "note": "send 与推送请求使用 on；需要返回值的 invoke 使用 handle。"
+    },
+    {
+      "id": "click-send",
+      "from": "view",
+      "to": "api",
+      "y": 375,
+      "label": "点击发送 → handleSend()",
+      "variant": "default",
+      "note": "src/views/IpcDemoView.vue:186。"
+    },
+    {
+      "id": "call-send-api",
+      "from": "api",
+      "to": "bridge",
+      "y": 415,
+      "label": "mainApi.send('demo:send')",
+      "variant": "emphasis",
+      "note": "src/apis/demo.js 的 sendDemoMessage()。"
+    },
+    {
+      "id": "renderer-send",
+      "from": "bridge",
+      "to": "ipc",
+      "y": 455,
+      "label": "ipcRenderer.send",
+      "variant": "security",
+      "note": "Preload 先检查 sendChannels 白名单。"
+    },
+    {
+      "id": "main-on-send",
+      "from": "ipc",
+      "to": "module",
+      "y": 495,
+      "label": "触发 ipcMain.on('demo:send')",
+      "variant": "dashed",
+      "note": "electron/ipc/demo.cjs:14，记录日志后结束，无返回值。"
+    },
+    {
+      "id": "click-invoke",
+      "from": "view",
+      "to": "api",
+      "y": 565,
+      "label": "点击调用 → handleInvoke()",
+      "variant": "default",
+      "note": "src/views/IpcDemoView.vue:187。"
+    },
+    {
+      "id": "call-invoke-api",
+      "from": "api",
+      "to": "bridge",
+      "y": 605,
+      "label": "mainApi.invoke('demo:invoke')",
+      "variant": "emphasis",
+      "note": "src/apis/demo.js 的 invokeDemoMessage()。"
+    },
+    {
+      "id": "renderer-invoke",
+      "from": "bridge",
+      "to": "ipc",
+      "y": 645,
+      "label": "ipcRenderer.invoke",
+      "variant": "security",
+      "note": "Preload 检查 invokeChannels 白名单并返回 Promise。"
+    },
+    {
+      "id": "main-handle-invoke",
+      "from": "ipc",
+      "to": "module",
+      "y": 685,
+      "label": "触发 ipcMain.handle('demo:invoke')",
+      "variant": "emphasis",
+      "note": "electron/ipc/demo.cjs:18。"
+    },
+    {
+      "id": "handler-result",
+      "from": "module",
+      "to": "ipc",
+      "y": 725,
+      "label": "返回 { ok, data, message }",
+      "variant": "return"
+    },
+    {
+      "id": "invoke-resolved",
+      "from": "ipc",
+      "to": "bridge",
+      "y": 765,
+      "label": "Promise resolved",
+      "variant": "return"
+    },
+    {
+      "id": "bridge-api-result",
+      "from": "bridge",
+      "to": "api",
+      "y": 805,
+      "label": "返回业务结果",
+      "variant": "return"
+    },
+    {
+      "id": "view-shows-result",
+      "from": "api",
+      "to": "view",
+      "y": 845,
+      "label": "更新 invokeResult 与日志",
+      "variant": "return"
+    },
+    {
+      "id": "view-register-listeners",
+      "from": "view",
+      "to": "api",
+      "y": 905,
+      "label": "startListening() / registerOnce()",
+      "variant": "default",
+      "note": "页面按钮分别调用 onDemoMessage 与 onceDemoMessage。"
+    },
+    {
+      "id": "api-register-listeners",
+      "from": "api",
+      "to": "bridge",
+      "y": 950,
+      "label": "mainApi.on / mainApi.once",
+      "variant": "security"
+    },
+    {
+      "id": "renderer-register-listeners",
+      "from": "bridge",
+      "to": "ipc",
+      "y": 995,
+      "label": "ipcRenderer.on / ipcRenderer.once",
+      "variant": "emphasis",
+      "note": "监听注册发生在 Renderer；on 返回数字订阅 ID。"
+    },
+    {
+      "id": "click-trigger-push",
+      "from": "view",
+      "to": "api",
+      "y": 1075,
+      "label": "点击触发推送",
+      "variant": "default",
+      "note": "src/views/IpcDemoView.vue:208。"
+    },
+    {
+      "id": "request-push-api",
+      "from": "api",
+      "to": "bridge",
+      "y": 1115,
+      "label": "mainApi.send('demo:request-messages')",
+      "variant": "emphasis"
+    },
+    {
+      "id": "request-push-renderer",
+      "from": "bridge",
+      "to": "ipc",
+      "y": 1155,
+      "label": "ipcRenderer.send",
+      "variant": "security"
+    },
+    {
+      "id": "request-push-main",
+      "from": "ipc",
+      "to": "module",
+      "y": 1195,
+      "label": "触发 ipcMain.on(requestMessages)",
+      "variant": "emphasis",
+      "note": "electron/ipc/demo.cjs:27。"
+    },
+    {
+      "id": "event-sender-push",
+      "from": "module",
+      "to": "ipc",
+      "y": 1240,
+      "label": "event.sender.send(channel, payload)",
+      "variant": "dashed",
+      "note": "当前示例分别向 on 与 once channel 连续发送 sequence 1、2。"
+    },
+    {
+      "id": "renderer-listener-called",
+      "from": "ipc",
+      "to": "bridge",
+      "y": 1285,
+      "label": "触发 ipcRenderer listener",
+      "variant": "dashed",
+      "note": "on 收到两次；once 第一次触发后由 Electron 自动移除。"
+    },
+    {
+      "id": "bridge-forwards-payload",
+      "from": "bridge",
+      "to": "api",
+      "y": 1330,
+      "label": "wrappedListener(event, payload)",
+      "variant": "return"
+    },
+    {
+      "id": "api-forwards-payload",
+      "from": "api",
+      "to": "view",
+      "y": 1375,
+      "label": "业务 listener(payload) → addLog",
+      "variant": "return",
+      "note": "业务 API 丢弃 IpcRendererEvent，只把普通 payload 交给页面。"
+    },
+    {
+      "id": "view-stop-listening",
+      "from": "view",
+      "to": "api",
+      "y": 1480,
+      "label": "stopListening() / onBeforeUnmount",
+      "variant": "default",
+      "note": "主动取消或组件卸载都会调用 offDemoMessage。"
+    },
+    {
+      "id": "api-off-subscription",
+      "from": "api",
+      "to": "bridge",
+      "y": 1525,
+      "label": "mainApi.off(channel, subscriptionId)",
+      "variant": "security"
+    },
+    {
+      "id": "renderer-off-listener",
+      "from": "bridge",
+      "to": "ipc",
+      "y": 1570,
+      "label": "ipcRenderer.off(channel, listener)",
+      "variant": "emphasis",
+      "note": "Preload 用订阅 ID 找回原始 listener 后移除。"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "注册位置",
+      "items": [
+        "electron/main.cjs:36 只调用一次 registerIpcHandlers(ipcMain)",
+        "electron/ipc/index.cjs 聚合 user 与 demo 功能模块",
+        "功能模块通过 ipcMain.on 或 ipcMain.handle 注册 channel"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "安全边界",
+      "items": [
+        "Vue 页面不直接导入 electron，只调用 src/apis 下的业务 API",
+        "electron/preload.cjs 通过 contextBridge 暴露 window.mainApi",
+        "send、invoke、Renderer listener 各自经过独立 channel 白名单"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "方法对应关系",
+      "items": [
+        "send 对应 ipcRenderer.send + ipcMain.on，不等待返回",
+        "invoke 对应 ipcRenderer.invoke + ipcMain.handle，返回 Promise",
+        "on、once、off 管理 ipcRenderer listener；Main 用 event.sender.send 推送"
+      ]
+    }
+  ]
+}

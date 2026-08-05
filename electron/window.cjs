@@ -41,7 +41,7 @@ async function createMainWindow({
   if (isDevelopment && openDevTools) {
     mainWindow.webContents.once('did-frame-finish-load', () => {
       if (!mainWindow.isDestroyed()) {
-        mainWindow.webContents.openDevTools({ mode: 'detach' })
+        mainWindow.webContents.openDevTools({ mode: 'right' })
       }
     })
   }

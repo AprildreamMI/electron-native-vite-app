@@ -30,6 +30,10 @@ function loadElectronEnv({ projectRoot, mode }) {
     quiet: true,
   })
 
+  const isProduction = process.env.NODE_ENV === 'production'
+  process.env.PROD = String(isProduction)
+  process.env.DEV = String(!isProduction)
+
   return envFiles
 }
 
